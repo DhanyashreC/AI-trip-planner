@@ -3,6 +3,7 @@ import { Playfair_Display} from "next/font/google";
 import "./globals.css";
 import Provider from "./_components/Provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexClientProvider } from "./ConvexClientProvider";
 
 
 
@@ -29,8 +30,8 @@ export default function RootLayout({
       <body 
       className={playfair_display.className}
       >
-        <Provider>
- {children}
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+ 
         </Provider>
         
         </body>
