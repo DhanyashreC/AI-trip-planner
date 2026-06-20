@@ -27,14 +27,18 @@ export default function RootLayout({
     <ClerkProvider>
     <html
       lang="en">
-      <body 
-      className={playfair_display.className}
-      >
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+      <body className={playfair_display.className}>
+  <ConvexClientProvider>
+    <Provider>
+      {children}
+    </Provider>
+  </ConvexClientProvider>
+</body>
+       
  
-        </Provider>
+       
         
-        </body>
+        
     </html>
     </ClerkProvider>
   );
