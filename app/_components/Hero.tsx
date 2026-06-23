@@ -3,16 +3,21 @@ import { Textarea } from '@/components/ui/textarea'
 import React from 'react'
 
 
+  
+
+
+
+
 
 
 import { ArrowBigDown, Globe2, Landmark, Plane, Send } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { HeroVideoDialog } from '@/components/ui/hero-video-dialog';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
 
-const suggestions= [
+export const suggestions= [
   {
     title:'Create New trip',
     icon: <Globe2  className= 'text-blue-400 h-5 w-5'/> 
@@ -33,12 +38,12 @@ const suggestions= [
         
       
     
-  
+
 ]
 
 function Hero() {
    const { user }=useUser();
-   const router=useRouter
+   const router=useRouter();
    const onSend=()=>{
     if(!user)
     {
@@ -47,6 +52,8 @@ function Hero() {
 
       return ;
     }
+    router.push('/create-new-trip')
+
 
    }
   return (

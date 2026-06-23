@@ -9,14 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@arcjet/next": "^1.5.0",
     "@clerk/nextjs": "^7.5.6",
     "@tabler/icons-react": "^3.44.0",
+    "axios": "^1.18.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.41.0",
     "lucide-react": "^1.21.0",
     "motion": "^12.40.0",
     "next": "16.2.9",
+    "openai": "^6.44.0",
     "radix-ui": "^1.6.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
