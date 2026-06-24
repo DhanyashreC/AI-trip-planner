@@ -13,6 +13,11 @@ import FinalTripUi from "./FinalTripUi";
 
 
 
+
+
+
+
+
 type Message = {
   role: string;
   content: string;
@@ -24,10 +29,14 @@ function ChatBox() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState<string>("");
   const [isFinal,setIsFinal]=useState (false);
+  const[loading,setLoading] =useState(false)
+  const[tripDetail,setTripDetail]=useState()
 
   const onSend = async () => {
   if (!userInput.trim()) return;
 
+ setLoading (true);
+  setUserInput('');
   const newMsg: Message = {
     role: "user",
     content: userInput,
@@ -41,21 +50,33 @@ function ChatBox() {
       messages: [...messages, newMsg],
       isFinal:isFinal
     });
-   console.log("TRIP",result.data);
-
-    !isFinal && setMessages((prev) => [
-      ...prev,
-    {
-  role: "assistant",
-  content:
-    result.data.ui === "Final"
-      ? ""
-      : result.data.resp,
-  ui: result.data.ui,
-  tripData: result.data.resp,
   
+
+
+
+console.log("RESULT DATA:", result.data);
+    !isFinal && setMessages((prev) => [
+  ...prev,
+  {
+    role: "assistant",
+    content: result.data.resp || "",
+    ui: result.data.ui,
+    tripData: result.data.resp,
+  },
+]);
+
+
+   if (isFinal) {
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "assistant",
+      content: "",
+      ui: "Final",
+      tripData: JSON.stringify(result.data.trip_plan, null, 2),
+    },
+  ]);
 }
-    ]);
   } catch (error) {
     console.error(error);
   }
@@ -86,7 +107,10 @@ const sendSelectedOption = async (value: string) => {
   }
 };
 
-const RenderGenerativeUi = (ui: string | undefined) => {
+const RenderGenerativeUi = (
+  ui: string | undefined,
+  tripData?: string
+) => {
 
   if (ui === "groupSize") {
     return (
@@ -110,20 +134,34 @@ const RenderGenerativeUi = (ui: string | undefined) => {
         onSelectedOption={sendSelectedOption}
       />
     );
-  }s
-  if (ui === "Final") {
-  return <FinalTripUi />;
+  }
+ if (ui === "Final") {
+  return (
+    <FinalTripUi
+      tripDetail={tripData}
+      viewTrip={() => {
+        console.log(tripData);
+      }}
+    />
+  );
 }
 
   return null;
 };
-useEffect(()=>{
-  const lastMsg=messages[messages.length-1];
-  if(lastMsg?.ui=='final'){
+useEffect(() => {
+  const lastMsg = messages[messages.length - 1];
+
+  if (lastMsg?.ui === "Final") {
     setIsFinal(true);
+    setUserInput("OK, Great!");
     onSend();
   }
-},[messages])
+}, [messages]);
+useEffect(()=> {
+  if(isFinal && userInput){
+    onSend();
+  }
+}, [isFinal]);
 
 
   return (
@@ -150,14 +188,16 @@ useEffect(()=>{
       : "bg-gray-100 text-black"
   }`}
 >
-  {msg.ui === "Final" ? (
-    <FinalTripUi />
-  ) : (
-    <>
-      {msg.content}
-      {RenderGenerativeUi(msg.ui)}
-    </>
-  )}
+ {msg.ui === "Final" ? (
+  <FinalTripUi
+    tripDetail={msg.tripData || msg.content}
+  />
+) : (
+  <>
+    {msg.content}
+    {RenderGenerativeUi(msg.ui)}
+  </>
+)}
 </div>
           </div>
         ))}
