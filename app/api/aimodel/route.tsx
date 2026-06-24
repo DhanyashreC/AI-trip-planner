@@ -134,9 +134,92 @@ Assistant:
 
 Always mention the extracted source and destination before asking the next question.
 `;
+
+const FINAL_PROMPT = `
+Generate Travel Plan with given details.
+
+Give me hotel options list with:
+
+- Hotel Name
+- Hotel Address
+- Price
+- Hotel Image URL
+- Geo Coordinates
+- Rating
+- Description
+
+And suggest itinerary with:
+
+- Place Name
+- Place Details
+- Place Image URL
+- Geo Coordinates
+- Place Address
+- Ticket Pricing
+- Time Travel Each Location
+
+With each day plan and best time to visit.
+
+Return response in JSON format.
+
+Output Schema:
+
+{
+  "trip_plan": {
+    "destination": "string",
+    "duration": "string",
+    "origin": "string",
+    "budget": "string",
+    "group_size": "string",
+
+    "hotels": [
+      {
+        "hotel_name": "string",
+        "hotel_address": "string",
+        "price_per_night": "string",
+        "hotel_image_url": "string",
+
+        "geo_coordinates": {
+          "latitude": "number",
+          "longitude": "number"
+        },
+
+        "rating": "number",
+        "description": "string"
+      }
+    ],
+
+    "itinerary": [
+      {
+        "day": "number",
+        "day_plan": "string",
+        "best_time_to_visit_day": "string",
+
+        "activities": [
+          {
+            "place_name": "string",
+            "place_details": "string",
+            "place_image_url": "string",
+
+            "geo_coordinates": {
+              "latitude": "number",
+              "longitude": "number"
+            },
+
+            "place_address": "string",
+            "ticket_pricing": "string",
+            "time_travel_each_location": "string",
+            "best_time_to_visit": "string"
+          }
+        ]
+      }
+    ]
+  }
+}
+`;
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const {body,isFinal} = await req.json();
 
     const messages = body.messages || [];
    
@@ -146,7 +229,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: PROMPT,
+          content:isFinal?FINAL_PROMPT: PROMPT,
         },
         ...messages,
       ],

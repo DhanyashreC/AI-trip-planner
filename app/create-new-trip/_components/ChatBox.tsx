@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import { Send } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import EmptyBoxState from "./EmptyBoxState";
 import GroupSIzeUi from "./GroupSIzeUi";
 import BudgetUi from "./BudgetUi";
@@ -23,6 +23,7 @@ type Message = {
 function ChatBox() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState<string>("");
+  const [isFinal,setIsFinal]=useState (false);
 
   const onSend = async () => {
   if (!userInput.trim()) return;
@@ -38,10 +39,11 @@ function ChatBox() {
   try {
     const result = await axios.post("/api/aimodel", {
       messages: [...messages, newMsg],
+      isFinal:isFinal
     });
-    console.log(result.data);
+   console.log("TRIP",result.data);
 
-    setMessages((prev) => [
+    !isFinal && setMessages((prev) => [
       ...prev,
     {
   role: "assistant",
@@ -108,13 +110,20 @@ const RenderGenerativeUi = (ui: string | undefined) => {
         onSelectedOption={sendSelectedOption}
       />
     );
-  }
+  }s
   if (ui === "Final") {
   return <FinalTripUi />;
 }
 
   return null;
 };
+useEffect(()=>{
+  const lastMsg=messages[messages.length-1];
+  if(lastMsg?.ui=='final'){
+    setIsFinal(true);
+    onSend();
+  }
+},[messages])
 
 
   return (
