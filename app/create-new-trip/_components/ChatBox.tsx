@@ -6,10 +6,18 @@ import axios from "axios";
 import { Send } from "lucide-react";
 import React, { useState } from "react";
 import EmptyBoxState from "./EmptyBoxState";
+import GroupSIzeUi from "./GroupSIzeUi";
+import BudgetUi from "./BudgetUi";
+import TripDurationUi from "./TripDurationUi";
+import FinalTripUi from "./FinalTripUi";
+
+
 
 type Message = {
   role: string;
   content: string;
+  ui?: string;
+  tripData?: string;
 };
 
 function ChatBox() {
@@ -31,18 +39,83 @@ function ChatBox() {
     const result = await axios.post("/api/aimodel", {
       messages: [...messages, newMsg],
     });
+    console.log(result.data);
 
     setMessages((prev) => [
       ...prev,
-      {
-        role: "assistant",
-        content: result.data.resp || "No response",
-      },
+    {
+  role: "assistant",
+  content:
+    result.data.ui === "Final"
+      ? ""
+      : result.data.resp,
+  ui: result.data.ui,
+  tripData: result.data.resp,
+  
+}
     ]);
   } catch (error) {
     console.error(error);
   }
 };
+const sendSelectedOption = async (value: string) => {
+  const newMsg: Message = {
+    role: "user",
+    content: value,
+  };
+
+  const updatedMessages = [...messages, newMsg];
+ setMessages(updatedMessages);
+  try {
+    const result = await axios.post("/api/aimodel", {
+      messages: updatedMessages,
+    });
+
+    setMessages([
+      ...updatedMessages,
+      {
+        role: "assistant",
+        content: result.data.resp,
+        ui: result.data.ui,
+      },
+    ]);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const RenderGenerativeUi = (ui: string | undefined) => {
+
+  if (ui === "groupSize") {
+    return (
+      <GroupSIzeUi
+        onSelectedOption={sendSelectedOption}
+      />
+    );
+  }
+
+  if (ui === "budget") {
+    return (
+      <BudgetUi
+        onSelectedOption={sendSelectedOption}
+      />
+    );
+  }
+
+  if (ui === "tripDuration") {
+    return (
+      <TripDurationUi
+        onSelectedOption={sendSelectedOption}
+      />
+    );
+  }
+  if (ui === "Final") {
+  return <FinalTripUi />;
+}
+
+  return null;
+};
+
 
   return (
     <div className="h-[85vh] flex flex-col">
@@ -61,15 +134,22 @@ function ChatBox() {
                 : "justify-start"
             }`}
           >
-            <div
-              className={`max-w-lg px-4 py-2 rounded-lg ${
-                msg.role === "user"
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-black"
-              }`}
-            >
-              {msg.content}
-            </div>
+           <div
+  className={`max-w-lg px-4 py-2 rounded-lg ${
+    msg.role === "user"
+      ? "bg-primary text-white"
+      : "bg-gray-100 text-black"
+  }`}
+>
+  {msg.ui === "Final" ? (
+    <FinalTripUi />
+  ) : (
+    <>
+      {msg.content}
+      {RenderGenerativeUi(msg.ui)}
+    </>
+  )}
+</div>
           </div>
         ))}
       </section>
@@ -98,5 +178,6 @@ function ChatBox() {
     </div>
   );
 }
+
 
 export default ChatBox;
