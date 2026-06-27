@@ -86,14 +86,14 @@ Step 5
 
 AFTER ALL DETAILS ARE COLLECTED:
 
-Immediately generate a complete trip plan.
-
-Return:
+Return ONLY
 
 {
-"resp":"FULL TRIP PLAN",
+"resp":"Great! I have collected all your trip details.",
 "ui":"Final"
 }
+
+DO NOT generate the trip plan here.
 FULL TRIP PLAN
 The trip plan must contain:
 AFTER ALL DETAILS ARE COLLECTED:
@@ -315,6 +315,7 @@ export async function POST(req: NextRequest) {
 const messages = body.messages || [];
    
 const isFinal = body.isFinal || false;
+console.log("API isFinal =", isFinal);
     const apiResponse = await client.chat.completions.create({
       model: "openai/gpt-oss-120b:free",
       messages: [
@@ -324,9 +325,7 @@ const isFinal = body.isFinal || false;
         },
         ...messages,
       ],
-      response_format: {
-        type: "json_object",
-      },
+      
       temperature: 0,
     });
 
@@ -339,15 +338,16 @@ if (!apiResponse?.choices?.length) {
   });
 }
 
-const content = apiResponse.choices[0]?.message?.content;
+const content =
+  apiResponse.choices?.[0]?.message?.content ?? "";
 
     console.log("AI Response:", content);
 
   if (!content) {
-  return NextResponse.json({
-    resp: "What is your starting location?",
-    ui: "source",
-  });
+ return NextResponse.json({
+  error: true,
+  raw: content,
+});
 }
 
     try {
@@ -356,12 +356,20 @@ const content = apiResponse.choices[0]?.message?.content;
     ?.replace(/```json/g, "")
     ?.replace(/```/g, "")
     ?.trim();
+let parsedData;
 
-  const parsedData = JSON.parse(cleanedContent);
+try {
+  parsedData = JSON.parse(cleanedContent);
+} catch (err) {
+  console.error("Invalid JSON:", cleanedContent);
 
-  console.log("PARSED:", parsedData);
+  return NextResponse.json({
+    error: true,
+    raw: cleanedContent,
+  });
+}
 
-  return NextResponse.json(parsedData);
+return NextResponse.json(parsedData);
 
 } catch (parseError) {
   console.log("RAW AI RESPONSE:", content);

@@ -11,7 +11,27 @@ function FinalTripUi({ tripDetail }: any) {
     return null;
   }
 
-const trip = tripDetail;
+  // Parse if it was passed down as a JSON string template
+  let trip = tripDetail;
+  if (typeof tripDetail === "string") {
+    try {
+      trip = JSON.parse(tripDetail);
+    } catch (e) {
+      // In case it's the raw text block from your screenshot's terminal
+      return (
+        <div className="bg-white rounded-xl border p-4 mt-3 whitespace-pre-wrap">
+          {tripDetail}
+        </div>
+      );
+    }
+  }
+
+  // If parsing extraction nests it inside another trip_plan property
+  if (trip.trip_plan) {
+    trip = trip.trip_plan;
+  }
+
+    // ... keep the rest of your original component UI code identical here
 
   return (
     <div className="bg-white rounded-xl border p-4 mt-3">
