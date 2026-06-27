@@ -9,24 +9,29 @@ export const CreateNewUser = mutation({
   },
 
   handler: async (ctx, args) => {
-    // If user already exists?
-    const user = await ctx.db
+    // Check if user already exists
+    const existingUsers = await ctx.db
       .query("UserTable")
       .filter((q) => q.eq(q.field("email"), args.email))
       .collect();
 
-    if (user?.length == 0) {
+    if (existingUsers?.length === 0) {
       const userData = {
         name: args.name,
         email: args.email,
         imageUrl: args.imageUrl,
       };
 
-      // If not then create new user
-      const result=await ctx.db.insert('UserTable',userData)
-      return userData;
+      // Insert new user and capture the unique database ID
+      const newUserId = await ctx.db.insert('UserTable', userData);
+      
+      return {
+        _id: newUserId,
+        ...userData
+      };
     }
 
-    return user[0];
+    // Return the matched user database details
+    return existingUsers[0];
   },
 });

@@ -10,12 +10,15 @@ import GroupSIzeUi from "./GroupSIzeUi";
 import BudgetUi from "./BudgetUi";
 import TripDurationUi from "./TripDurationUi";
 import FinalTripUi from "./FinalTripUi";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useUserDetail } from "../_components/Provider"; // Adjust this import path if needed!
 
 type Message = {
   role: string;
   content: string;
   ui?: string;
-  tripData?: any; // Changed to any to accept strings or objects safely
+  tripData?: any; 
 };
 
 function ChatBox() {
@@ -23,6 +26,10 @@ function ChatBox() {
   const [userInput, setUserInput] = useState<string>("");
   const [isFinal, setIsFinal] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Convex mutations & custom context
+  const SaveTripDetail = useMutation(api.tripDetail.CreateTripDetail);
+  const { userDetail } = useUserDetail();
 
   const onSend = async () => {
     if (!userInput.trim()) return;
@@ -40,7 +47,6 @@ function ChatBox() {
     setMessages(updatedMessages);
 
     try {
-      // Determine if we are at the final step based on the last UI shown
       const currentIsFinal = isFinal || messages.some(m => m.ui === "tripDuration");
 
       const result = await axios.post("/api/aimodel", {
@@ -52,15 +58,27 @@ function ChatBox() {
 
       if (result.data.ui === "Final" || result.data.trip_plan || currentIsFinal) {
         setIsFinal(true);
+        const finalPlan = result.data.trip_plan ? result.data.trip_plan : result.data;
+
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
             content: "",
             ui: "Final",
-            tripData: result.data.trip_plan ? result.data.trip_plan : result.data,
+            tripData: finalPlan,
           },
         ]);
+
+        // Auto-save to Convex if user data is loaded
+        if (userDetail?._id) {
+          await SaveTripDetail({
+            tripId: Date.now().toString(),
+            uid: userDetail._id,
+            tripDetail: finalPlan,
+          });
+          console.log("Trip successfully saved from manual search!");
+        }
       } else {
         setMessages((prev) => [
           ...prev,
@@ -79,7 +97,7 @@ function ChatBox() {
     }
   };
 
-const sendSelectedOption = async (value: string) => {
+  const sendSelectedOption = async (value: string) => {
     const newMsg: Message = {
       role: "user",
       content: value,
@@ -87,9 +105,9 @@ const sendSelectedOption = async (value: string) => {
 
     const updatedMessages = [...messages, newMsg];
     setMessages(updatedMessages);
+    setLoading(true); // Ensure loading state is active during the final payload assembly
     
     try {
-      // FIX: Only go to final prompt if the user just selected the trip duration!
       const currentIsFinal = isFinal || messages.some(m => m.ui === "tripDuration");
 
       const result = await axios.post("/api/aimodel", {
@@ -99,15 +117,27 @@ const sendSelectedOption = async (value: string) => {
 
       if (result.data.ui === "Final" || result.data.trip_plan) {
         setIsFinal(true);
+        const finalPlan = result.data.trip_plan ? result.data.trip_plan : result.data;
+
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
             content: "",
             ui: "Final",
-            tripData: result.data.trip_plan ? result.data.trip_plan : result.data,
+            tripData: finalPlan,
           },
         ]);
+
+        // Auto-save to Convex if user data is loaded
+        if (userDetail?._id) {
+          await SaveTripDetail({
+            tripId: Date.now().toString(),
+            uid: userDetail._id,
+            tripDetail: finalPlan,
+          });
+          console.log("Trip successfully saved from option selections!");
+        }
       } else {
         setMessages([
           ...updatedMessages,
@@ -120,7 +150,9 @@ const sendSelectedOption = async (value: string) => {
         ]);
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
